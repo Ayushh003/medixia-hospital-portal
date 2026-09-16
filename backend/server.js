@@ -24,12 +24,16 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const mongoose = require('mongoose');
+
 // API Health Check
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'online',
     timestamp: new Date().toISOString(),
     service: 'Hospital Management System API',
+    hasMongoUri: Boolean(process.env.MONGO_URI),
+    mongoState: mongoose.connection.readyState,
   });
 });
 
