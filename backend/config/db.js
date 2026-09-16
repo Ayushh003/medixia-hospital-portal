@@ -1,19 +1,36 @@
 const mongoose = require('mongoose');
 
+let cachedPromise = null;
+
 const connectDB = async () => {
-  // If already connected, reuse existing database connection
-  if (mongoose.connection.readyState >= 1) {
+  if (mongoose.connection.readyState === 1) {
     return;
   }
 
+  if (!cachedPromise) {
+    const opts = {
+      serverSelectionTimeoutMS: 7000,
+    };
+    cachedPromise = mongoose
+      .connect(process.env.MONGO_URI, opts)
+      .then((conn) => {
+        console.log(`[MongoDB Connected]: ${conn.connection.host} / ${conn.connection.name}`);
+        return conn;
+      })
+      .catch((error) => {
+        cachedPromise = null;
+        console.error(`MongoDB Connection Error: ${error.message}`);
+        if (!process.env.VERCEL) {
+          process.exit(1);
+        }
+        throw error;
+      });
+  }
+
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
-    console.log(`[MongoDB Connected]: ${conn.connection.host} / ${conn.connection.name}`);
-  } catch (error) {
-    console.error(`MongoDB Connection Error: ${error.message}`);
-    if (!process.env.VERCEL) {
-      process.exit(1);
-    }
+    await cachedPromise;
+  } catch (err) {
+    // Logged above
   }
 };
 

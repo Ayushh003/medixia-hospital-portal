@@ -8,7 +8,9 @@ const { errorHandler } = require('./middleware/errorMiddleware');
 dotenv.config();
 
 // Connect to MongoDB database
-connectDB();
+if (!process.env.VERCEL) {
+  connectDB();
+}
 
 const app = express();
 
