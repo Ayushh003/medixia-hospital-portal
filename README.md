@@ -157,6 +157,20 @@ node tests/e2eFullFlowTest.js
 
 ---
 
+## Deploying to Vercel (Single Full-Stack Deployment)
+
+This repository is pre-configured to run **both the React frontend and Node.js Express backend together on Vercel** under one domain with zero CORS issues.
+
+1. Push your code to GitHub.
+2. Go to [Vercel Dashboard](https://vercel.com/) and click **"Add New Project"** > **"Import Git Repository"**.
+3. In **Environment Variables**, add:
+   - `MONGO_URI`: Your MongoDB Atlas connection string (`mongodb+srv://...`)
+   - `JWT_SECRET`: Any secure random secret string
+4. Click **Deploy**. Vercel will automatically build the frontend and deploy the backend API as serverless endpoints (`/api/*`).
+
+---
+
 ## License
 
 This project is open source and available under the [MIT License](LICENSE).
+
