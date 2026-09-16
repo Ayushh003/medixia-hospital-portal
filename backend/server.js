@@ -26,16 +26,23 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const mongoose = require('mongoose');
+const { getLastError } = require('./config/db');
 
 // API Health Check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  try {
+    await connectDB();
+  } catch (e) {
+    // catch for diagnostics
+  }
+
   res.status(200).json({
     status: 'online',
     timestamp: new Date().toISOString(),
     service: 'Hospital Management System API',
     hasMongoUri: Boolean(process.env.MONGO_URI),
     mongoState: mongoose.connection.readyState,
+    mongoError: getLastError(),
   });
 });
 
