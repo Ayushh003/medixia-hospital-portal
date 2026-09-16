@@ -1,44 +1,48 @@
 const mongoose = require('mongoose');
 
-let cachedPromise = null;
-let lastMongoError = null;
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null, error: null };
+}
 
 const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) {
-    return;
+  if (cached.conn) {
+    return cached.conn;
   }
 
-  if (!cachedPromise) {
+  if (!cached.promise) {
     const opts = {
+      bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
     };
-    cachedPromise = mongoose
+
+    cached.promise = mongoose
       .connect(process.env.MONGO_URI, opts)
-      .then((conn) => {
-        lastMongoError = null;
-        console.log(`[MongoDB Connected]: ${conn.connection.host} / ${conn.connection.name}`);
-        return conn;
+      .then((mongooseInstance) => {
+        cached.error = null;
+        console.log(`[MongoDB Connected]: ${mongooseInstance.connection.host}`);
+        return mongooseInstance;
       })
-      .catch((error) => {
-        cachedPromise = null;
-        lastMongoError = error.message;
-        console.error(`MongoDB Connection Error: ${error.message}`);
-        if (!process.env.VERCEL) {
-          process.exit(1);
-        }
-        throw error;
+      .catch((err) => {
+        cached.promise = null;
+        cached.error = err.message;
+        console.error(`MongoDB Connection Error: ${err.message}`);
+        throw err;
       });
   }
 
   try {
-    await cachedPromise;
-  } catch (err) {
-    lastMongoError = err.message;
-    throw err;
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
   }
+
+  return cached.conn;
 };
 
-const getLastError = () => lastMongoError;
+const getLastError = () => (cached ? cached.error : null);
 
 module.exports = connectDB;
 module.exports.getLastError = getLastError;
